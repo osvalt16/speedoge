@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SpeeDoge : petits prix, livraison à vitesse Doge</title>
+<style>
+/* Thème : toute couleur passe par ces variables (règle du CONTEXT.md).
+   Rouge = baisse (donc les remises), vert = hausse (tendance), jaune = avertissement. */
+:root{--bg:#f4f5f7;--card:#fff;--line:#e3e6ec;--text:#1b1f27;--mut:#667085;
+--head:#131a22;--head-ink:#fff;--accent:#ff9900;--accent-ink:#1b1f27;
+--green:#12a150;--red:#e5253d;--yellow:#9a6700;--yellow-bg:#fff4d6;
+--c-tech:#e6eefc;--c-maison:#e7f6ec;--c-mode:#fdeaf0;
+--veil:rgba(0,0,0,.45);--shadow:0 6px 20px rgba(20,30,50,.14)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.up{color:var(--green)}.down{color:var(--red)}.warn{color:var(--yellow)}
+.note{color:var(--mut);font-size:13px}.note.warn{color:var(--yellow)}
+.cur{font-variant-numeric:tabular-nums;white-space:nowrap}
+.topbar{background:var(--yellow-bg);text-align:center;padding:6px 12px;font-size:13px}
+header{position:sticky;top:0;z-index:5;background:var(--head);color:var(--head-ink);display:flex;gap:12px;align-items:center;padding:10px 16px}
+.logo{color:var(--head-ink);text-decoration:none;font-size:22px;font-weight:800;white-space:nowrap}.logo b{color:var(--accent)}
+#q{flex:1;min-width:0;padding:10px 14px;border:0;border-radius:8px}
+.cartbtn{background:none;border:1px solid var(--line);color:var(--head-ink);border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.badge{background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:0 7px;font-weight:700}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.hero h1{margin:0;font-size:24px}.hero p{margin:2px 0 0}
+.timer{font:700 28px ui-monospace,Menlo,Consolas,monospace;color:var(--red)}
+.bar{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:99px;padding:6px 14px;cursor:pointer}
+.chips button.on{background:var(--head);color:var(--head-ink);border-color:var(--head)}
+select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.card h3{margin:0;font-size:15px;min-height:2.6em}
+.pic{position:relative;height:130px;border-radius:8px;display:grid;place-items:center;font-size:56px}
+.pic.Tech{background:var(--c-tech)}.pic.Maison{background:var(--c-maison)}.pic.Mode{background:var(--c-mode)}
+.off{position:absolute;top:8px;right:8px;background:var(--red);color:var(--card);border-radius:6px;padding:1px 7px;font:700 13px system-ui,sans-serif}
+.tag{position:absolute;top:8px;left:8px;font:700 12px system-ui,sans-serif}
+.rate{font-size:13px;color:var(--mut)}.stars{color:var(--accent)}
+.price{display:flex;gap:8px;align-items:baseline}.price b{font-size:20px}.price s{color:var(--mut)}
+.cta{border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:10px;cursor:pointer;margin-top:auto}
+.cta:hover{filter:brightness(.94)}.cta:disabled{opacity:.45;cursor:not-allowed}
+.overlay{position:fixed;inset:0;background:var(--veil);z-index:9}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,100%);border-radius:0;z-index:10;display:flex;flex-direction:column;gap:10px;overflow:auto;
+transform:translateX(105%);visibility:hidden;transition:transform .25s,visibility .25s}
+.drawer.open{transform:none;visibility:visible}
+.dh{display:flex;justify-content:space-between;align-items:center}
+.dh button{background:none;border:0;font-size:20px;cursor:pointer;color:var(--text)}
+.track{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:4px}
+.track i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.line{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.line .ico{font-size:30px}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:28px;height:28px;border:1px solid var(--line);background:var(--card);border-radius:6px;cursor:pointer;color:var(--text)}
+.coupon{display:flex;gap:8px}
+.coupon input{flex:1;min-width:0;padding:8px;border:1px solid var(--line);border-radius:8px}
+.coupon button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:0 12px;cursor:pointer;color:var(--text)}
+.totals div{display:flex;justify-content:space-between;padding:2px 0}
+.totals .big{font-size:18px;font-weight:800;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:var(--head);color:var(--head-ink);padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90%}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{text-align:center;padding:16px}
+@media(max-width:700px){.hide-mobile{display:none}.grid{grid-template-columns:repeat(2,1fr);gap:10px}
+.hero{flex-direction:column;align-items:flex-start}.pic{height:100px;font-size:44px}.card h3{font-size:14px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="topbar warn" id="promo"></div>
+<header>
+  <a class="logo" href="index.html">🐕 Spee<b>Doge</b></a>
+  <input id="q" type="search" placeholder="Rechercher un produit" aria-label="Rechercher un produit">
+  <button id="openCart" class="cartbtn" aria-label="Ouvrir le panier">🛒 <span class="hide-mobile">Panier</span> <span id="cartCount" class="badge">0</span></button>
+</header>
+<main>
+  <section class="panel hero">
+    <div><h1>⚡ Ventes flash</h1><p class="note">Prix cassés jusqu'à minuit, stock limité.</p></div>
+    <div><div class="note">Fin dans</div><div id="timer" class="timer">--:--:--</div></div>
+  </section>
+  <div class="bar">
+    <div id="cats" class="chips"></div>
+    <select id="sort" aria-label="Trier les produits">
+      <option value="pop">Les plus vendus</option>
+      <option value="off">Plus grosses remises</option>
+      <option value="asc">Prix croissant</option>
+      <option value="desc">Prix décroissant</option>
+    </select>
+  </div>
+  <div id="count" class="note"></div>
+  <div id="grid" class="grid"></div>
+  <p class="note warn">Site vitrine de démonstration : produits, prix et avis sont fictifs et aucun paiement n'est traité. Le panier reste dans votre navigateur, rien n'est envoyé ailleurs.</p>
+</main>
+<div id="overlay" class="overlay" hidden></div>
+<aside id="drawer" class="panel drawer" aria-hidden="true" aria-label="Panier">
+  <div class="dh"><b>Votre panier</b><button id="closeCart" aria-label="Fermer le panier">✕</button></div>
+  <div id="ship" class="note"></div>
+  <div id="lines"></div>
+  <div class="coupon"><input id="coupon" placeholder="Code promo" aria-label="Code promo"><button id="applyCoupon">Appliquer</button></div>
+  <div id="couponMsg" class="note"></div>
+  <div id="totals" class="totals"></div>
+  <button id="checkout" class="cta">Commander</button>
+</aside>
+<div id="toast" class="toast" role="status"></div>
+<footer class="note">SpeeDoge, vitrine de démonstration</footer>
+
+<script>
+"use strict";
+/* ============ 1. CONFIG ============ */
+const CFG = {
+  CART_KEY: "speedoge-cart-v1",   // ne jamais renommer sans migration
+  FREE_SHIPPING: 50,              // montant payé (en €) à partir duquel la livraison est offerte
+  SHIPPING_FEE: 4.99,
+  COUPONS: { SPEED10: 0.10, BIENVENUE5: 0.05 }
+};
+const CATEGORIES = ["Tout", "Tech", "Maison", "Mode"];
+// Données fictives et fixes : aucun hasard, la page est identique à chaque rechargement.
+const PRODUCTS = [
+  { id: 1,  name: "Écouteurs Bluetooth 5.3",       cat: "Tech",   price: 24.90, was: 59.90,  rating: 4.6, sold: 12400, icon: "🎧", flash: true },
+  { id: 2,  name: "Montre connectée sport",        cat: "Tech",   price: 39.90, was: 89.90,  rating: 4.4, sold: 8700,  icon: "⌚", flash: false },
+  { id: 3,  name: "Lampe LED de bureau tactile",   cat: "Maison", price: 18.90, was: 34.90,  rating: 4.7, sold: 15200, icon: "💡", flash: false },
+  { id: 4,  name: "Batterie externe 20 000 mAh",   cat: "Tech",   price: 22.90, was: 39.90,  rating: 4.5, sold: 9300,  icon: "🔋", flash: true },
+  { id: 5,  name: "Sac à dos antivol USB",         cat: "Mode",   price: 29.90, was: 64.90,  rating: 4.6, sold: 6100,  icon: "🎒", flash: false },
+  { id: 6,  name: "Mini projecteur portable",      cat: "Tech",   price: 79.00, was: 149.00, rating: 4.3, sold: 2800,  icon: "📽️", flash: true },
+  { id: 7,  name: "Casquette Doge brodée",         cat: "Mode",   price: 12.90, was: 24.90,  rating: 4.8, sold: 21000, icon: "🧢", flash: false },
+  { id: 8,  name: "Tapis de souris XXL",           cat: "Tech",   price: 9.90,  was: 19.90,  rating: 4.7, sold: 17800, icon: "🖱️", flash: false },
+  { id: 9,  name: "Blender portable rechargeable", cat: "Maison", price: 21.90, was: 45.00,  rating: 4.2, sold: 5400,  icon: "🥤", flash: true },
+  { id: 10, name: "Lunettes de soleil polarisées", cat: "Mode",   price: 11.90, was: 29.90,  rating: 4.5, sold: 11100, icon: "🕶️", flash: false },
+  { id: 11, name: "Clavier mécanique RGB",         cat: "Tech",   price: 44.90, was: 79.90,  rating: 4.6, sold: 4300,  icon: "⌨️", flash: false },
+  { id: 12, name: "Organiseur de câbles (x6)",     cat: "Maison", price: 7.90,  was: 16.90,  rating: 4.4, sold: 13600, icon: "🔌", flash: false }
+];
+const byId = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+
+/* ============ 2. CALCULS ============ */
+const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+const money = v => (Number.isFinite(v) ? eur.format(v) : "—");   // jamais de « NaN » à l'écran
+const cents = v => Math.round(v * 100) / 100;                    // évite les 0,30000000000000004
+const discountPct = p => Math.round((1 - p.price / p.was) * 100);
+const shortCount = n => (n >= 1000 ? (n / 1000).toFixed(1).replace(".", ",") + " k" : String(n));
+const stars = r => "★".repeat(Math.round(r)) + "☆".repeat(5 - Math.round(r));
+const plain = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // « ecouteurs » trouve « Écouteurs »
+// hasOwnProperty : un « constructor » venu du localStorage ne doit pas passer pour un code valide.
+const couponRate = code => (Object.prototype.hasOwnProperty.call(CFG.COUPONS, code) ? CFG.COUPONS[code] : 0);
+
+function cartTotals(cart) {
+  const subtotal = cents(Object.entries(cart.items).reduce((sum, [id, qty]) => sum + byId[id].price * qty, 0));
+  const discount = cents(subtotal * couponRate(cart.coupon));
+  const after = cents(subtotal - discount);
+  // Seuil jugé après remise : c'est le montant réellement payé qui compte.
+  const shipping = subtotal === 0 || after >= CFG.FREE_SHIPPING ? 0 : CFG.SHIPPING_FEE;
+  return { subtotal, discount, after, shipping, total: cents(after + shipping) };
+}
+
+/* ============ 3. STOCKAGE (navigateur uniquement) ============ */
+function loadState() {
+  const empty = { items: {}, coupon: "" };
+  try {
+    const raw = JSON.parse(localStorage.getItem(CFG.CART_KEY));
+    if (!raw || typeof raw.items !== "object") return empty;
+    const items = {};
+    for (const [id, qty] of Object.entries(raw.items)) {
+      if (byId[id] && Number.isInteger(qty) && qty > 0) items[id] = Math.min(qty, 99);
+    }
+    return { items, coupon: couponRate(raw.coupon) ? raw.coupon : "" };
+  } catch (e) { return empty; }   // JSON corrompu ou stockage bloqué : on repart d'un panier vide
+}
+function saveState() { try { localStorage.setItem(CFG.CART_KEY, JSON.stringify(state)); } catch (e) { /* le panier reste en mémoire */ } }
+
+/* ============ 4. RENDU ============ */
+const $ = id => document.getElementById(id);
+let state = loadState();
+const view = { cat: "Tout", query: "", sort: "pop" };
+const SORTERS = {
+  pop:  (a, b) => b.sold - a.sold,
+  asc:  (a, b) => a.price - b.price,
+  desc: (a, b) => b.price - a.price,
+  off:  (a, b) => discountPct(b) - discountPct(a)
+};
+
+// La recherche et le <select> vivent hors des zones re-rendues (innerHTML),
+// sinon ils seraient détruits à chaque changement.
+function renderCategories() {
+  $("cats").innerHTML = CATEGORIES.map(c => `<button data-cat="${c}" class="${c === view.cat ? "on" : ""}">${c}</button>`).join("");
+}
+
+function cardHtml(p) {
+  const badge = p.flash ? '<span class="tag down">⚡ Vente flash</span>'
+    : p.sold >= 10000 ? '<span class="tag up">▲ Top ventes</span>' : "";
+  return `<article class="card">
+    <div class="pic ${p.cat}">${badge}<span class="off">−${discountPct(p)} %</span>${p.icon}</div>
+    <h3>${p.name}</h3>
+    <div class="rate"><span class="stars">${stars(p.rating)}</span> ${String(p.rating).replace(".", ",")}<span class="hide-mobile"> (${shortCount(p.sold)} vendus)</span></div>
+    <div class="price"><b class="cur">${money(p.price)}</b><s class="cur">${money(p.was)}</s></div>
+    <button class="cta" data-add="${p.id}">Ajouter au panier</button>
+  </article>`;
+}
+
+function renderGrid() {
+  const q = plain(view.query.trim());
+  const list = PRODUCTS
+    .filter(p => (view.cat === "Tout" || p.cat === view.cat) && plain(p.name).includes(q))
+    .sort(SORTERS[view.sort]);
+  $("count").textContent = list.length + (list.length > 1 ? " produits" : " produit");
+  $("grid").innerHTML = list.map(cardHtml).join("") || '<p class="note">Aucun produit ne correspond à cette recherche. Essayez un autre mot.</p>';
+}
+
+function renderCart() {
+  const ids = Object.keys(state.items);
+  const t = cartTotals(state);
+  $("cartCount").textContent = ids.reduce((n, id) => n + state.items[id], 0);
+  $("lines").innerHTML = ids.map(id => {
+    const p = byId[id], q = state.items[id];
+    return `<div class="line"><span class="ico">${p.icon}</span>
+      <div><b>${p.name}</b><div class="note cur">${money(p.price)}</div></div>
+      <div class="qty"><button data-dec="${id}" aria-label="Retirer un">−</button><span>${q}</span><button data-inc="${id}" aria-label="Ajouter un">+</button></div></div>`;
+  }).join("") || '<p class="note">Votre panier est vide. Ajoutez un produit pour commencer.</p>';
+  const left = cents(CFG.FREE_SHIPPING - t.after);
+  const pct = Math.min(100, t.after / CFG.FREE_SHIPPING * 100);
+  $("ship").innerHTML = !ids.length ? "" : (left > 0
+    ? `Plus que <b class="cur">${money(left)}</b> pour la livraison offerte`
+    : "Livraison offerte") + `<div class="track"><i style="width:${pct}%"></i></div>`;
+  $("totals").innerHTML = `
+    <div><span>Sous-total</span><span class="cur">${money(t.subtotal)}</span></div>
+    ${t.discount ? `<div class="down"><span>Remise ${state.coupon}</span><span class="cur">−${money(t.discount)}</span></div>` : ""}
+    <div><span>Livraison</span><span class="cur">${t.shipping ? money(t.shipping) : "Offerte"}</span></div>
+    <div class="big"><span>Total</span><span class="cur">${money(t.total)}</span></div>`;
+  $("checkout").disabled = !ids.length;
+}
+
+/* ============ 5. ACTIONS ============ */
+let toastTimer;
+function toast(text) {
+  const el = $("toast");
+  el.textContent = text;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+}
+function commit() { saveState(); renderCart(); }
+function addToCart(id) {
+  state.items[id] = Math.min((state.items[id] || 0) + 1, 99);
+  commit();
+  toast("Ajouté au panier : " + byId[id].name);
+}
+function changeQty(id, delta) {
+  const q = (state.items[id] || 0) + delta;
+  if (q <= 0) delete state.items[id]; else state.items[id] = Math.min(q, 99);
+  commit();
+}
+function applyCoupon() {
+  const code = $("coupon").value.trim().toUpperCase();
+  const msg = $("couponMsg");
+  if (couponRate(code)) {
+    state.coupon = code;
+    msg.className = "note";
+    msg.textContent = "Code " + code + " appliqué.";
+    commit();
+  } else {
+    msg.className = "note warn";
+    msg.textContent = "Ce code n'existe pas. Vérifiez l'orthographe.";
+  }
+}
+function setCart(open) {
+  $("drawer").classList.toggle("open", open);
+  $("drawer").setAttribute("aria-hidden", String(!open));
+  $("overlay").hidden = !open;
+}
+function tick() {   // compte à rebours jusqu'à minuit (heure locale)
+  const now = new Date(), end = new Date(now);
+  end.setHours(24, 0, 0, 0);
+  const s = Math.max(0, Math.floor((end - now) / 1000));
+  $("timer").textContent = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(v => String(v).padStart(2, "0")).join(":");
+}
+
+/* ============ 6. ÉVÉNEMENTS & DÉMARRAGE ============ */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-add],[data-inc],[data-dec],[data-cat]");
+  if (!t) return;
+  if (t.dataset.add) addToCart(t.dataset.add);
+  else if (t.dataset.inc) changeQty(t.dataset.inc, 1);
+  else if (t.dataset.dec) changeQty(t.dataset.dec, -1);
+  else if (t.dataset.cat) { view.cat = t.dataset.cat; renderCategories(); renderGrid(); }
+});
+$("q").addEventListener("input", e => { view.query = e.target.value; renderGrid(); });
+$("sort").addEventListener("change", e => { view.sort = e.target.value; renderGrid(); });
+$("openCart").addEventListener("click", () => setCart(true));
+$("closeCart").addEventListener("click", () => setCart(false));
+$("overlay").addEventListener("click", () => setCart(false));
+document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(false); });
+$("applyCoupon").addEventListener("click", applyCoupon);
+$("checkout").addEventListener("click", () => toast("Démo : le paiement n'est pas branché, aucune commande n'est passée."));
+
+const [promoCode, promoRate] = Object.entries(CFG.COUPONS)[0];
+$("promo").textContent = "Livraison offerte dès " + money(CFG.FREE_SHIPPING) + " et " + Math.round(promoRate * 100) + " % de remise avec le code " + promoCode;
+$("coupon").value = state.coupon;
+renderCategories(); renderGrid(); renderCart();
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>
